@@ -1,0 +1,127 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Open Cypress Test Runner",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:open"
+			],
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run All Cypress Tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:run"
+			],
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Frontend Tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:run:frontend"
+			],
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Run API Tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:run:api"
+			],
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Smoke Tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:run:smoke"
+			],
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Chrome Tests",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"cy:run:chrome"
+			],
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Generate Test Reports",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"report:merge"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Open Test Reports",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"report:open"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Clean Test Artifacts",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"clean:reports"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Install Cypress",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"install:cypress"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify Cypress Installation",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"verify:cypress"
+			],
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}
