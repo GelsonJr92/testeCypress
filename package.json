@@ -20,7 +20,7 @@
     "cy:open:api": "cypress open --e2e --spec \"cypress/e2e/backend/**/*\"",
     "cy:open:frontend": "cypress open --e2e --spec \"cypress/e2e/frontend/**/*\"",
     "cy:open:component": "cypress open --component",
-    "report:merge": "mochawesome-merge cypress/reports/*.json > cypress/reports/merged.json",
+    "report:merge": "npx mochawesome-merge cypress/reports/mochawesome/*.json -o cypress/reports/merged.json",
     "report:generate": "marge cypress/reports/merged.json --reportDir cypress/reports --inline",
     "report:open": "start cypress/reports/merged.html",
     "clean:reports": "rimraf cypress/reports cypress/screenshots cypress/videos",
