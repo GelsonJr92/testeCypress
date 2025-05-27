@@ -2,7 +2,7 @@ import { defineConfig } from 'cypress';
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'https://serverest.dev', // ATUALIZADO para consistência
     supportFile: 'cypress/support/e2e.ts',
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     viewportWidth: 1280,
@@ -19,7 +19,12 @@ export default defineConfig({
     
     // Environment variables
     env: {
-      apiUrl: 'http://localhost:8080/api',
+      apiUrl: 'https://serverest.dev', // Mantido - URL correta para API
+      grepTags: process.env.CYPRESS_GREP_TAGS,
+      hideCredentials: true,
+      // Add default ServeRest admin credentials
+      USER_EMAIL: 'fulano@qa.com',
+      USER_PASSWORD: 'teste',
       coverage: false
     },
 
