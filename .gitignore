@@ -64,7 +64,7 @@ temp/
 *.backup
 
 # Package managers
-package-lock.json
+# package-lock.json  # Comentado - precisamos do lock file para cache do GitHub Actions
 yarn.lock
 pnpm-lock.yaml
 
