@@ -181,26 +181,5 @@ Cypress.Commands.add('apiList', (endpoint: string, query?: Record<string, any>, 
       failOnStatusCode: false
     };
     
-    return cy.request({ ...defaultOptions, ...options });
-  });
-});
-
-/**
- * Define o token de autenticação para requisições API (específico para ServeRest agora)
- * @param token - Token JWT (geralmente obtido do /login)
- */
-Cypress.Commands.add('setAuthToken', (token: string) => {
-  cy.window().then((win) => {
-    win.localStorage.setItem('token', token);
-  });
-});
-
-/**
- * Limpa dados de teste após os testes (adaptado)
- */
-Cypress.Commands.add('cleanupTestData', () => {
-  cy.window().then((win) => {
-    win.localStorage.removeItem('token');
-  });
-  cy.clearCookies();
+    return cy.request({ ...defaultOptions, ...options });  });
 });

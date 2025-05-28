@@ -53,19 +53,6 @@ export default defineConfig({
     retries: {
       runMode: 2,
       openMode: 0
-    },
-
-    // Experimental features
-    experimentalStudio: true,
-    experimentalMemoryManagement: true
-  },
-
-  component: {
-    devServer: {
-      framework: 'react',
-      bundler: 'webpack',
-    },
-    specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
-    supportFile: 'cypress/support/component.ts'
+    }
   }
 });

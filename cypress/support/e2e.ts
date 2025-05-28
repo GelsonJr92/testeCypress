@@ -9,7 +9,6 @@
 // Import commands.js using ES2015 syntax:
 // import './commands'; // Removido pois o arquivo commands.ts foi excluído (era para frontend)
 import './api-commands';
-import 'cypress-real-events';
 import '@cypress/grep';
 
 // Configure global settings
