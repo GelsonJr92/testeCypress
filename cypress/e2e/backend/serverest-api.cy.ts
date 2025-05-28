@@ -2,10 +2,7 @@ import { DataFactory } from '../../support/utils/DataFactory';
 import { ApiUtils } from '../../support/utils/ApiUtils'; // Importar ApiUtils
 
 describe('Testes de API CRUD para Usuários no ServeRest', () => {
-    let usuarioCriado: any;
-    let token: string;
-
-    before(function() {
+    let token: any;before(function() {
         // Realiza o login uma vez antes de todos os testes do bloco
         cy.loginApiServeRest().then((authToken) => {
             token = authToken;
@@ -21,7 +18,6 @@ describe('Testes de API CRUD para Usuários no ServeRest', () => {
     });
 
     beforeEach(function() {
-        // Garantir que o token está no localStorage antes de cada teste    beforeEach(function() {
         // Garantir que o token está no localStorage antes de cada teste
         cy.window().then((window) => {
             if (!window.localStorage.getItem('token') && token) {
@@ -33,104 +29,169 @@ describe('Testes de API CRUD para Usuários no ServeRest', () => {
                 message: `Token no localStorage: ${currentToken ? 'Presente' : 'Ausente'}`,
             });
         });
-    });
-
-    it('[POST] Deve criar um novo usuário com sucesso', function() {
+    });    it('[POST] Deve criar um novo usuário com sucesso', function() {
         const novoUsuario = DataFactory.gerarUsuarioServeRest();
-        cy.apiCreate('/usuarios', novoUsuario).then((response) => { // Token é pego do localStorage pelo comando
+        cy.apiCreate('/usuarios', novoUsuario).then((response) => {
             expect(response.status).to.eq(201);
             expect(response.body).to.have.property('message', 'Cadastro realizado com sucesso');
             expect(response.body).to.have.property('_id');
-            usuarioCriado = { ...novoUsuario, _id: response.body._id }; 
+            
+            const usuarioCriado = { ...novoUsuario, _id: response.body._id };
             Cypress.log({
                 name: 'CreateUser',
                 message: `Usuário criado: ${JSON.stringify(usuarioCriado)}`,
             });
-        });
-    });
-
-    it('[GET] Deve listar um usuário específico com sucesso', function() {
-        if (!usuarioCriado || !usuarioCriado._id) {
-            cy.log('ID do usuário não definido, pulando teste de leitura.');
-            this.skip(); 
-        }
-        cy.apiRead(`/usuarios/${usuarioCriado._id}`).then((response) => { // Token é pego do localStorage
-            expect(response.status).to.eq(200);
-            expect(response.body).to.have.property('nome', usuarioCriado.nome);
-            expect(response.body).to.have.property('email', usuarioCriado.email);
-            expect(response.body).to.have.property('administrador', usuarioCriado.administrador);
-            Cypress.log({
-                name: 'ReadUser',
-                message: `Usuário lido: ${JSON.stringify(response.body)}`,
+            
+            // Limpar o usuário criado
+            cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((deleteResponse) => {
+                expect(deleteResponse.status).to.eq(200);
+                Cypress.log({
+                    name: 'CleanupUser',
+                    message: `Usuário ${usuarioCriado._id} limpo com sucesso.`,
+                });
             });
         });
-    });
-
-    it('[PUT] Deve atualizar um usuário existente com sucesso', function() {
-        if (!usuarioCriado || !usuarioCriado._id) {
-            cy.log('ID do usuário não definido, pulando teste de atualização.');
-            this.skip();
-        }
-        const dadosAtualizados = {
-            nome: DataFactory.gerarUsuarioServeRest().nome,
-            email: DataFactory.gerarUsuarioServeRest().email, 
-            password: DataFactory.gerarUsuarioServeRest().password,
-            administrador: usuarioCriado.administrador === 'true' ? 'false' : 'true'
-        };
-        cy.apiUpdate(`/usuarios/${usuarioCriado._id}`, dadosAtualizados).then((response) => { // Token é pego do localStorage
-            expect(response.status).to.eq(200);
-            expect(response.body).to.have.property('message', 'Registro alterado com sucesso');
-            usuarioCriado = { ...usuarioCriado, ...dadosAtualizados };
-            Cypress.log({
-                name: 'UpdateUser',
-                message: `Usuário atualizado. Novos dados: ${JSON.stringify(dadosAtualizados)}`,
+    });    it('[GET] Deve listar um usuário específico com sucesso', function() {
+        // Criar um usuário primeiro
+        const novoUsuario = DataFactory.gerarUsuarioServeRest();
+        cy.apiCreate('/usuarios', novoUsuario).then((createResponse) => {
+            expect(createResponse.status).to.eq(201);
+            const usuarioCriado = { ...novoUsuario, _id: createResponse.body._id };
+            
+            // Testar a leitura
+            cy.apiRead(`/usuarios/${usuarioCriado._id}`).then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.have.property('nome', usuarioCriado.nome);
+                expect(response.body).to.have.property('email', usuarioCriado.email);
+                expect(response.body).to.have.property('administrador', usuarioCriado.administrador);
+                Cypress.log({
+                    name: 'ReadUser',
+                    message: `Usuário lido: ${JSON.stringify(response.body)}`,
+                });
+                
+                // Limpar o usuário criado
+                cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((deleteResponse) => {
+                    expect(deleteResponse.status).to.eq(200);
+                    Cypress.log({
+                        name: 'CleanupUser',
+                        message: `Usuário ${usuarioCriado._id} limpo com sucesso.`,
+                    });
+                });
             });
         });
-    });
-
-    it('[GET] Deve verificar se o usuário foi atualizado corretamente', function() {
-        if (!usuarioCriado || !usuarioCriado._id) {
-            cy.log('ID do usuário não definido, pulando teste de verificação de atualização.');
-            this.skip();
-        }
-        cy.apiRead(`/usuarios/${usuarioCriado._id}`).then((response) => { // Token é pego do localStorage
-            expect(response.status).to.eq(200);
-            expect(response.body).to.have.property('nome', usuarioCriado.nome);
-            expect(response.body).to.have.property('email', usuarioCriado.email);
-            expect(response.body).to.have.property('administrador', usuarioCriado.administrador);
-            Cypress.log({
-                name: 'VerifyUpdateUser',
-                message: `Verificação pós-atualização: ${JSON.stringify(response.body)}`,
+    });    it('[PUT] Deve atualizar um usuário existente com sucesso', function() {
+        // Criar um usuário primeiro
+        const novoUsuario = DataFactory.gerarUsuarioServeRest();
+        cy.apiCreate('/usuarios', novoUsuario).then((createResponse) => {
+            expect(createResponse.status).to.eq(201);
+            const usuarioCriado = { ...novoUsuario, _id: createResponse.body._id };
+            
+            // Dados para atualização
+            const dadosAtualizados = {
+                nome: DataFactory.gerarUsuarioServeRest().nome,
+                email: DataFactory.gerarUsuarioServeRest().email, 
+                password: DataFactory.gerarUsuarioServeRest().password,
+                administrador: usuarioCriado.administrador === 'true' ? 'false' : 'true'
+            };
+            
+            // Testar a atualização
+            cy.apiUpdate(`/usuarios/${usuarioCriado._id}`, dadosAtualizados).then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.have.property('message', 'Registro alterado com sucesso');
+                Cypress.log({
+                    name: 'UpdateUser',
+                    message: `Usuário atualizado. Novos dados: ${JSON.stringify(dadosAtualizados)}`,
+                });
+                
+                // Limpar o usuário criado
+                cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((deleteResponse) => {
+                    expect(deleteResponse.status).to.eq(200);
+                    Cypress.log({
+                        name: 'CleanupUser',
+                        message: `Usuário ${usuarioCriado._id} limpo com sucesso.`,
+                    });
+                });
             });
         });
-    });
-
-    it('[DELETE] Deve excluir um usuário existente com sucesso', function() {
-        if (!usuarioCriado || !usuarioCriado._id) {
-            cy.log('ID do usuário não definido, pulando teste de exclusão.');
-            this.skip();
-        }
-        cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((response) => { // Token é pego do localStorage
-            expect(response.status).to.eq(200);
-            expect(response.body).to.have.property('message', 'Registro excluído com sucesso');
-            Cypress.log({
-                name: 'DeleteUser',
-                message: `Usuário excluído: ID ${usuarioCriado._id}`,
+    });    it('[GET] Deve verificar se o usuário foi atualizado corretamente', function() {
+        // Criar um usuário primeiro
+        const novoUsuario = DataFactory.gerarUsuarioServeRest();
+        cy.apiCreate('/usuarios', novoUsuario).then((createResponse) => {
+            expect(createResponse.status).to.eq(201);
+            const usuarioCriado = { ...novoUsuario, _id: createResponse.body._id };
+            
+            // Dados para atualização
+            const dadosAtualizados = {
+                nome: DataFactory.gerarUsuarioServeRest().nome,
+                email: DataFactory.gerarUsuarioServeRest().email, 
+                password: DataFactory.gerarUsuarioServeRest().password,
+                administrador: usuarioCriado.administrador === 'true' ? 'false' : 'true'
+            };
+            
+            // Atualizar o usuário
+            cy.apiUpdate(`/usuarios/${usuarioCriado._id}`, dadosAtualizados).then((updateResponse) => {
+                expect(updateResponse.status).to.eq(200);
+                const usuarioAtualizado = { ...usuarioCriado, ...dadosAtualizados };
+                
+                // Verificar se foi atualizado corretamente
+                cy.apiRead(`/usuarios/${usuarioCriado._id}`).then((response) => {
+                    expect(response.status).to.eq(200);
+                    expect(response.body).to.have.property('nome', usuarioAtualizado.nome);
+                    expect(response.body).to.have.property('email', usuarioAtualizado.email);
+                    expect(response.body).to.have.property('administrador', usuarioAtualizado.administrador);
+                    Cypress.log({
+                        name: 'VerifyUpdateUser',
+                        message: `Verificação pós-atualização: ${JSON.stringify(response.body)}`,
+                    });
+                    
+                    // Limpar o usuário criado
+                    cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((deleteResponse) => {
+                        expect(deleteResponse.status).to.eq(200);
+                        Cypress.log({
+                            name: 'CleanupUser',
+                            message: `Usuário ${usuarioCriado._id} limpo com sucesso.`,
+                        });
+                    });
+                });
             });
         });
-    });
-
-    it('[GET] Deve verificar se o usuário foi excluído (não deve ser encontrado)', function() {
-        if (!usuarioCriado || !usuarioCriado._id) {
-            cy.log('ID do usuário não definido, pulando teste de verificação de exclusão.');
-            this.skip();
-        }
-        cy.apiRead(`/usuarios/${usuarioCriado._id}`, { failOnStatusCode: false }).then((response) => { // Token é pego do localStorage
-            expect(response.status).to.eq(400);
-            expect(response.body).to.have.property('message', 'Usuário não encontrado');
-            Cypress.log({
-                name: 'VerifyDeleteUser',
-                message: `Verificação pós-exclusão para ID ${usuarioCriado._id}: Status ${response.status}`,
+    });    it('[DELETE] Deve excluir um usuário existente com sucesso', function() {
+        // Criar um usuário primeiro
+        const novoUsuario = DataFactory.gerarUsuarioServeRest();
+        cy.apiCreate('/usuarios', novoUsuario).then((createResponse) => {
+            expect(createResponse.status).to.eq(201);
+            const usuarioCriado = { ...novoUsuario, _id: createResponse.body._id };
+            
+            // Testar a exclusão
+            cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body).to.have.property('message', 'Registro excluído com sucesso');
+                Cypress.log({
+                    name: 'DeleteUser',
+                    message: `Usuário excluído: ID ${usuarioCriado._id}`,
+                });
+            });
+        });
+    });    it('[GET] Deve verificar se o usuário foi excluído (não deve ser encontrado)', function() {
+        // Criar um usuário primeiro
+        const novoUsuario = DataFactory.gerarUsuarioServeRest();
+        cy.apiCreate('/usuarios', novoUsuario).then((createResponse) => {
+            expect(createResponse.status).to.eq(201);
+            const usuarioCriado = { ...novoUsuario, _id: createResponse.body._id };
+            
+            // Excluir o usuário
+            cy.apiDelete(`/usuarios/${usuarioCriado._id}`).then((deleteResponse) => {
+                expect(deleteResponse.status).to.eq(200);
+                
+                // Verificar se foi excluído (não deve ser encontrado)
+                cy.apiRead(`/usuarios/${usuarioCriado._id}`, { failOnStatusCode: false }).then((response) => {
+                    expect(response.status).to.eq(400);
+                    expect(response.body).to.have.property('message', 'Usuário não encontrado');
+                    Cypress.log({
+                        name: 'VerifyDeleteUser',
+                        message: `Verificação pós-exclusão para ID ${usuarioCriado._id}: Status ${response.status}`,
+                    });
+                });
             });
         });
     });

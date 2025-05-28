@@ -77,7 +77,7 @@ export class ApiUtils {
         testData = config.generateTestData();
       });
 
-      it('deve criar um novo registro (POST)', () => {
+      it('[POST] Deve criar um novo registro', () => {
         cy.apiCreate(config.endpoint, testData).then((response) => {
           ApiUtils.validateResponse(response, 201, config.responseSchema);
           createdId = response.body.id || response.body._id;
@@ -92,7 +92,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve ler o registro criado (GET)', () => {
+      it('[GET] Deve ler o registro criado', () => {
         cy.apiRead(`${config.endpoint}/${createdId}`).then((response) => {
           ApiUtils.validateResponse(response, 200, config.responseSchema);
           expect(response.body.id || response.body._id).to.eq(createdId);
@@ -106,7 +106,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve listar todos os registros (GET)', () => {
+      it('[GET] Deve listar todos os registros', () => {
         cy.apiList(config.endpoint).then((response) => {
           ApiUtils.validateResponse(response, 200);
           expect(response.body).to.be.an('array');
@@ -120,7 +120,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve atualizar o registro (PUT)', () => {
+      it('[PUT] Deve atualizar o registro', () => {
         const updateData = config.generateUpdateData ? 
           config.generateUpdateData() : 
           { ...testData, name: 'Updated Name' };
@@ -139,7 +139,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve atualizar parcialmente o registro (PATCH)', () => {
+      it('[PATCH] Deve atualizar parcialmente o registro', () => {
         const patchData = { name: 'Patched Name' };
 
         cy.request({
@@ -158,7 +158,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve excluir o registro (DELETE)', () => {
+      it('[DELETE] Deve excluir o registro', () => {
         cy.apiDelete(`${config.endpoint}/${createdId}`).then((response) => {
           ApiUtils.validateResponse(response, 204);
         });
@@ -169,7 +169,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve tratar requisições inválidas adequadamente', () => {
+      it('[ERROR] Deve tratar requisições inválidas adequadamente', () => {
         // Test invalid POST data
         cy.apiCreate(config.endpoint, {}).then((response) => {
           expect(response.status).to.be.oneOf([400, 422]);
@@ -204,7 +204,7 @@ export class ApiUtils {
    * @param maxResponseTime - Maximum response time in milliseconds
    */  static testarPerformance(endpoint: string, method: string = 'GET', maxResponseTime: number = 2000): void {
     describe(`Testes de Performance para ${method} ${endpoint}`, () => {
-      it(`Deve responder em até ${maxResponseTime}ms para ${method} ${endpoint}`, () => {
+      it(`[${method}] Deve responder em até ${maxResponseTime}ms`, () => {
         const startTime = Date.now();
         
         cy.request({
@@ -227,7 +227,7 @@ export class ApiUtils {
    */
   static testAuthentication(endpoint: string, token?: string): void {
     describe('Testes de Autenticação', () => {
-      it('deve exigir autenticação', () => {
+      it('[AUTH] Deve exigir autenticação', () => {
         cy.request({
           method: 'GET',
           url: ApiUtils.getUrl(endpoint),
@@ -238,7 +238,7 @@ export class ApiUtils {
       });
 
       if (token) {
-        it('deve aceitar token válido', () => {
+        it('[AUTH] Deve aceitar token válido', () => {
           cy.request({
             method: 'GET',
             url: ApiUtils.getUrl(endpoint),
@@ -250,7 +250,7 @@ export class ApiUtils {
         });
       }
 
-      it('deve rejeitar token inválido', () => {
+      it('[AUTH] Deve rejeitar token inválido', () => {
         cy.request({
           method: 'GET',
           url: ApiUtils.getUrl(endpoint),
@@ -269,7 +269,7 @@ export class ApiUtils {
    */
   static testPagination(endpoint: string): void {
     describe('Testes de Paginação', () => {
-      it('deve suportar parâmetro de página', () => {
+      it('[GET] Deve suportar parâmetro de página', () => {
         cy.apiList(endpoint, { page: 1, limit: 10 }).then((response) => {
           ApiUtils.validateResponse(response, 200);
           expect(response.body).to.be.an('array');
@@ -277,7 +277,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve suportar parâmetro de limite', () => {
+      it('[GET] Deve suportar parâmetro de limite', () => {
         cy.apiList(endpoint, { limit: 5 }).then((response) => {
           ApiUtils.validateResponse(response, 200);
           expect(response.body).to.be.an('array');
@@ -285,7 +285,7 @@ export class ApiUtils {
         });
       });
 
-      it('deve tratar parâmetros de paginação inválidos', () => {
+      it('[ERROR] Deve tratar parâmetros de paginação inválidos', () => {
         cy.apiList(endpoint, { page: -1, limit: -1 }).then((response) => {
           // Should either use defaults or return error
           expect(response.status).to.be.oneOf([200, 400]);
@@ -301,14 +301,14 @@ export class ApiUtils {
    */
   static testSearch(endpoint: string, searchTerm: string): void {
     describe('Testes de Busca', () => {
-      it('deve suportar parâmetro de busca', () => {
+      it('[GET] Deve suportar parâmetro de busca', () => {
         cy.apiList(endpoint, { search: searchTerm }).then((response) => {
           ApiUtils.validateResponse(response, 200);
           expect(response.body).to.be.an('array');
         });
       });
 
-      it('should return empty results for non-existent search', () => {
+      it('[GET] Deve retornar resultados vazios para busca inexistente', () => {
         cy.apiList(endpoint, { search: 'nonexistentterm12345' }).then((response) => {
           ApiUtils.validateResponse(response, 200);
           expect(response.body).to.be.an('array');
@@ -346,10 +346,8 @@ export class ApiUtils {
     ];
     
     const ehPublico = endpointsPublicos.includes(chaveEndpoint);
-    const ehPrivado = endpointsPrivados.includes(chaveEndpoint);
-
-    describe(`Testes de Autenticação para ${method} ${endpoint}`, () => {
-      it('Deve retornar resposta adequada ao tentar acessar sem token', () => {
+    const ehPrivado = endpointsPrivados.includes(chaveEndpoint);    describe(`Testes de Autenticação para ${method} ${endpoint}`, () => {
+      it(`[${method}-AUTH] Deve retornar resposta adequada ao tentar acessar sem token`, () => {
         const urlTeste = endpointComId ? 
           `https://serverest.dev${endpoint.replace('{_id}', '1234567890123456')}` : 
           `https://serverest.dev${endpoint}`;
@@ -375,7 +373,7 @@ export class ApiUtils {
         });
       });
 
-      it('Deve retornar sucesso ou erro específico com token válido', () => {
+      it(`[${method}-AUTH] Deve retornar sucesso ou erro específico com token válido`, () => {
         cy.loginApiServeRest().then((token) => {
           expect(token).to.exist;
 
@@ -439,7 +437,7 @@ export class ApiUtils {
         });
       });
 
-      it('Deve retornar 401 Unauthorized ao tentar acessar com token inválido', () => {
+      it(`[${method}-AUTH] Deve retornar 401 Unauthorized ao tentar acessar com token inválido`, () => {
         const urlTeste = endpointComId ? 
           `https://serverest.dev${endpoint.replace('{_id}', '1234567890123456')}` : 
           `https://serverest.dev${endpoint}`;
@@ -479,7 +477,7 @@ export class ApiUtils {
    */
   static testarPaginacao(endpoint: string, nomeArrayResultados: string): void {
     describe(`Testes de Paginação para ${endpoint}`, () => {
-      it('Deve retornar estrutura padrão sem parâmetros de paginação', () => {
+      it('[GET] Deve retornar estrutura padrão sem parâmetros de paginação', () => {
         cy.apiList(endpoint, {}).then((resposta) => {
           expect(resposta.status).to.eq(200);
           expect(resposta.body).to.have.property(nomeArrayResultados).and.to.be.an('array');
@@ -487,7 +485,7 @@ export class ApiUtils {
         });
       });
 
-      it('Deve retornar erro 400 para parâmetros de paginação não suportados', () => {
+      it('[ERROR] Deve retornar erro 400 para parâmetros de paginação não suportados', () => {
         cy.apiList(endpoint, { _page: 1, _limit: 2 }).then((resposta) => {
           expect(resposta.status).to.eq(400);
           expect(resposta.body).to.have.property('_page');
@@ -518,7 +516,7 @@ export class ApiUtils {
     verificarResultadosFn?: (resultados: any[]) => void
   ): void {
     describe(`Testes de Busca para ${endpoint} com ${JSON.stringify(queryParams)}`, () => {
-      it('Deve retornar resultados correspondentes à busca', () => {
+      it('[GET] Deve retornar resultados correspondentes à busca', () => {
         cy.apiList(endpoint, queryParams).then((resposta) => {
           expect(resposta.status).to.eq(200);
           expect(resposta.body).to.have.property(nomeArrayResultados).and.to.be.an('array');
@@ -528,7 +526,7 @@ export class ApiUtils {
         });
       });
 
-      it('Deve retornar array vazio para busca sem resultados', () => {
+      it('[GET] Deve retornar array vazio para busca sem resultados', () => {
         const paramsBuscaSemResultado = { ...queryParams };
         const primeiraChave = Object.keys(paramsBuscaSemResultado)[0];
         

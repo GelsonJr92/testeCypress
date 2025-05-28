@@ -23,12 +23,11 @@ Cypress.Commands.add('loginApiServeRest', (email?: string, password?: string) =>
     },
     failOnStatusCode: false
   }).then((response) => {
-    if (response.status === 200 && response.body.authorization) {
+    if (response.status === 200) {
       console.log('Login API bem-sucedido! Token obtido.');
       return response.body.authorization; // Retorna apenas o token
     } else {
-      console.error('Falha no Login API', response);
-      throw new Error(`Falha no login: ${response.status} - ${JSON.stringify(response.body)}`);
+      throw new Error(`Login falhou com status ${response.status}: ${JSON.stringify(response.body)}`);
     }
   });
 });
@@ -63,8 +62,7 @@ Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Parti
       headers,
       failOnStatusCode: false
     };
-    
-    console.log('🚀 Enviando requisição:', {
+      console.log('🚀 Enviando requisição:', {
       method: defaultOptions.method,
       url: defaultOptions.url,
       headers: defaultOptions.headers,
@@ -90,7 +88,7 @@ Cypress.Commands.add('apiRead', (endpoint: string, options?: Partial<Cypress.Req
     if (token) {
       headers['Authorization'] = token;
     }
-
+    
     const defaultOptions: Partial<Cypress.RequestOptions> = {
       method: 'GET',
       url: `${Cypress.env('apiUrl')}${endpoint}`,
@@ -118,7 +116,7 @@ Cypress.Commands.add('apiUpdate', (endpoint: string, body?: any, options?: Parti
     if (token) {
       headers['Authorization'] = token;
     }
-
+    
     const defaultOptions: Partial<Cypress.RequestOptions> = {
       method: 'PUT',
       url: `${Cypress.env('apiUrl')}${endpoint}`,
@@ -146,7 +144,7 @@ Cypress.Commands.add('apiDelete', (endpoint: string, options?: Partial<Cypress.R
     if (token) {
       headers['Authorization'] = token;
     }
-
+    
     const defaultOptions: Partial<Cypress.RequestOptions> = {
       method: 'DELETE',
       url: `${Cypress.env('apiUrl')}${endpoint}`,
@@ -173,7 +171,9 @@ Cypress.Commands.add('apiList', (endpoint: string, query?: Record<string, any>, 
     
     if (token) {
       headers['Authorization'] = token;
-    }    const queryString = query ? '?' + new URLSearchParams(query).toString() : '';
+    }
+    
+    const queryString = query ? '?' + new URLSearchParams(query).toString() : '';
     const defaultOptions: Partial<Cypress.RequestOptions> = {
       method: 'GET',
       url: `${Cypress.env('apiUrl')}${endpoint}${queryString}`,
@@ -181,5 +181,6 @@ Cypress.Commands.add('apiList', (endpoint: string, query?: Record<string, any>, 
       failOnStatusCode: false
     };
     
-    return cy.request({ ...defaultOptions, ...options });  });
+    return cy.request({ ...defaultOptions, ...options });
+  });
 });
