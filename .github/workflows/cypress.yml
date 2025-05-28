@@ -10,82 +10,7 @@ on:
     - cron: '0 2 * * *'
 
 jobs:
-  e2e-tests:
-    runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        # Run tests on multiple Node.js versions
-        node-version: [18.x, 20.x]
-        # Run tests on different browsers
-        browser: [chrome, firefox, edge]
-        
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        
-    - name: Cache Cypress binary
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/Cypress
-        key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          cypress-${{ runner.os }}-
-          
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Install Cypress
-      run: npx cypress install
-      
-    - name: Start application
-      run: |
-        npm run start:test &
-        npx wait-on http://localhost:3000 --timeout 60000
-      env:
-        NODE_ENV: test
-        
-    - name: Run Cypress E2E tests
-      uses: cypress-io/github-action@v6
-      with:
-        browser: ${{ matrix.browser }}
-        record: true
-        parallel: true
-        group: 'E2E - ${{ matrix.browser }}'
-        tag: '${{ github.event_name }}'
-        config-file: cypress.config.ts
-      env:
-        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
-        
-    - name: Upload screenshots
-      uses: actions/upload-artifact@v3
-      if: failure()
-      with:
-        name: cypress-screenshots-${{ matrix.browser }}-${{ matrix.node-version }}
-        path: cypress/screenshots
-        
-    - name: Upload videos
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: cypress-videos-${{ matrix.browser }}-${{ matrix.node-version }}
-        path: cypress/videos
-        
-    - name: Upload test reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: cypress-reports-${{ matrix.browser }}-${{ matrix.node-version }}
-        path: cypress/reports
-
+  # Job simplificado para testes de API ServeRest (não precisa de servidor local)
   api-tests:
     runs-on: ubuntu-latest
     
@@ -102,25 +27,38 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Start API server
-      run: |
-        npm run start:api &
-        npx wait-on http://localhost:3000/api/health --timeout 60000
-      env:
-        NODE_ENV: test
-        
+    - name: Install Cypress
+      run: npx cypress install
+      
     - name: Run API tests
       run: npm run cy:run:api
       
-    - name: Upload API test reports
-      uses: actions/upload-artifact@v3
+    - name: Upload screenshots on failure
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: cypress-screenshots
+        path: cypress/screenshots
+        
+    - name: Upload videos
+      uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: api-test-reports
+        name: cypress-videos
+        path: cypress/videos
+        
+    - name: Upload test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: cypress-reports
         path: cypress/reports
 
-  component-tests:
+  # Job para geração de relatórios consolidados
+  test-summary:
     runs-on: ubuntu-latest
+    needs: [api-tests]
+    if: always()
     
     steps:
     - name: Checkout code
@@ -134,66 +72,52 @@ jobs:
         
     - name: Install dependencies
       run: npm ci
-      
-    - name: Run component tests
-      run: npm run cy:run:component
-      
-    - name: Upload component test reports
-      uses: actions/upload-artifact@v3
-      if: always()
+        
+    - name: Download test artifacts
+      uses: actions/download-artifact@v4
       with:
-        name: component-test-reports
+        name: cypress-reports
         path: cypress/reports
-
-  test-summary:
-    runs-on: ubuntu-latest
-    needs: [e2e-tests, api-tests, component-tests]
-    if: always()
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v3
-      
-    - name: Merge test reports
-      run: |
-        mkdir -p merged-reports
-        find . -name "*.json" -path "*/cypress/reports/*" -exec cp {} merged-reports/ \;
         
     - name: Generate combined report
       run: |
-        npx mochawesome-merge merged-reports/*.json > merged-reports/combined.json
-        npx marge merged-reports/combined.json --reportDir merged-reports --inline
+        npm run report:merge
+        npx marge cypress/reports/merged.json --reportDir cypress/reports/html --inline
         
     - name: Upload combined report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: combined-test-report
-        path: merged-reports
+        path: cypress/reports/html
         
     - name: Comment PR with test results
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const fs = require('fs');
-          const path = require('path');
           
-          // Read test results and create comment
-          const reportPath = 'merged-reports/combined.json';
+          // Verificar se o arquivo de relatório existe
+          const reportPath = 'cypress/reports/merged.json';
           if (fs.existsSync(reportPath)) {
             const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
             const stats = report.stats;
             
-            const comment = `## 🧪 Test Results
+            const comment = `## 🧪 Resultados dos Testes API ServeRest
             
-            | Metric | Value |
-            |--------|-------|
-            | ✅ Tests Passed | ${stats.passes} |
-            | ❌ Tests Failed | ${stats.failures} |
-            | ⏭️ Tests Skipped | ${stats.pending} |
-            | ⏱️ Duration | ${stats.duration}ms |
+            | Métrica | Valor |
+            |---------|-------|
+            | ✅ Testes Aprovados | ${stats.passes} |
+            | ❌ Testes Falharam | ${stats.failures} |
+            | ⏭️ Testes Pendentes | ${stats.pending} |
+            | ⏱️ Duração | ${stats.duration}ms |
+            | 📊 Taxa de Sucesso | ${((stats.passes / stats.tests) * 100).toFixed(1)}% |
             
-            ${stats.failures > 0 ? '❌ Some tests failed. Please check the detailed report.' : '✅ All tests passed!'}
+            ${stats.failures > 0 ? '❌ Alguns testes falharam. Verifique o relatório detalhado.' : '✅ Todos os testes passaram!'}
+            
+            📋 **Detalhes:**
+            - Total de Testes: ${stats.tests}
+            - Suites Executadas: ${stats.suites}
             `;
             
             github.rest.issues.createComment({
@@ -202,4 +126,6 @@ jobs:
               repo: context.repo.repo,
               body: comment
             });
+          } else {
+            console.log('Arquivo de relatório não encontrado:', reportPath);
           }
