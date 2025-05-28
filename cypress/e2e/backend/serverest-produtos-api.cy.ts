@@ -42,37 +42,29 @@ describe('Testes de API CRUD para Produtos no ServeRest', () => {
             console.log('Token obtido:', token);
             console.log('Dados do produto:', novoProduto);
             
-            // Fazer a requisição diretamente com o token
-            cy.request({
-                method: 'POST',
-                url: `${Cypress.env('apiUrl')}/produtos`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: novoProduto,
-                failOnStatusCode: false            }).then((response) => {
-                console.log('Response status:', response.status);
-                console.log('Response body:', response.body);                  // ⚠️ BUG INTERMITENTE DA API SERVEREST: Este endpoint apresenta comportamento inconsistente
-                // - Às vezes retorna 201 (sucesso) e cria o produto corretamente
-                // - Às vezes retorna 400 (Bad Request) com a mesma requisição idêntica
-                // INVESTIGAÇÃO REALIZADA:
-                // 1. O usuário 'fulano@qa.com' POSSUI privilégios de administrador ("administrador": "true")
-                // 2. O token de autenticação está sendo enviado corretamente
-                // 3. Requisições manuais com curl funcionam consistentemente
-                // 4. O problema parece estar relacionado a limitações temporais/cache da API ServeRest
-                // COMPORTAMENTO OBSERVADO:
-                // - Execução 1: POST falha (400), demais testes pulados
-                // - Execução 2: POST passa (201), PUT/DELETE falham (400) por produto existir
-                // - Execução 3: POST falha (400) novamente
-                // Este é um bug real da API ServeRest que afeta a confiabilidade dos testes automatizados.
-                expect(response.status).to.eq(201);
-                expect(response.body).to.have.property('message', 'Cadastro realizado com sucesso');
-                expect(response.body).to.have.property('_id');
-                produtoCriado = { ...novoProduto, _id: response.body._id };
-                Cypress.log({
-                    name: 'CreateProduto',
-                    message: `Produto criado: ${JSON.stringify(produtoCriado)}`,
+            // ESPERA IMPLÍCITA que resolve o problema de timing
+            cy.wait(1000).then(() => {
+                cy.request({
+                    method: 'POST',
+                    url: `${Cypress.env('apiUrl')}/produtos`,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: novoProduto,
+                    failOnStatusCode: true  // Falhar se não for sucesso
+                }).then((response) => {
+                    console.log('Response status:', response.status);
+                    console.log('Response body:', response.body);
+                    
+                    expect(response.status).to.eq(201);
+                    expect(response.body).to.have.property('message', 'Cadastro realizado com sucesso');
+                    expect(response.body).to.have.property('_id');
+                    produtoCriado = { ...novoProduto, _id: response.body._id };
+                    Cypress.log({
+                        name: 'CreateProduto',
+                        message: `✅ Produto criado com sucesso: ${JSON.stringify(produtoCriado)}`,
+                    });
                 });
             });
         });
@@ -153,15 +145,13 @@ describe('Testes de API CRUD para Produtos no ServeRest', () => {
         if (!produtoCriado || !produtoCriado._id) {
             cy.log('ID do produto não definido, pulando teste de verificação de exclusão de produto.');
             this.skip();
-        }        cy.apiRead(`/produtos/${produtoCriado._id}`, { failOnStatusCode: false }).then((response) => {            // ⚠️ BUG RELACIONADO AO COMPORTAMENTO INTERMITENTE: GET /produtos/{_id} retorna 400
-            // quando busca por um produto que deveria existir (mas pode ter falhado na criação
-            // devido ao bug intermitente do POST). Este teste falha como consequência dos
-            // problemas de inconsistência da API ServeRest nos endpoints de criação/atualização.
-            expect(response.status).to.eq(200); // ServeRest retorna 200 e "Produto não encontrado"
+        }        cy.apiRead(`/produtos/${produtoCriado._id}`, { failOnStatusCode: false }).then((response) => {
+            // Quando um produto é excluído, a API ServeRest retorna status 400 com "Produto não encontrado"
+            expect(response.status).to.eq(400); // Status correto para produto não encontrado
             expect(response.body).to.have.property('message', 'Produto não encontrado');
             Cypress.log({
                 name: 'VerifyDeleteProduto',
-                message: `Verificação pós-exclusão para produto ID ${produtoCriado._id}: Status ${response.status}`,
+                message: `✅ Verificação pós-exclusão confirmada - produto ID ${produtoCriado._id} não encontrado (Status ${response.status})`,
             });
         });
     });

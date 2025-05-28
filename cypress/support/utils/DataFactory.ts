@@ -53,13 +53,12 @@ export class DataFactory {
   /**
    * Gera dados de produto para a API ServeRest.
    * @param overrides - Campos opcionais para sobrescrever.
-   */
-  static gerarProdutoServeRest(overrides: Partial<ProdutoServeRest> = {}): ProdutoServeRest {
+   */  static gerarProdutoServeRest(overrides: Partial<ProdutoServeRest> = {}): ProdutoServeRest {
     const timestamp = Date.now();
     const randomId = faker.string.alphanumeric(8);
     return {
       nome: `${faker.commerce.productName()} ${timestamp}_${randomId}`, // Garantir alta unicidade
-      preco: parseFloat(faker.commerce.price({ min: 10, max: 5000, dec: 2 })),
+      preco: faker.number.int({ min: 10, max: 5000 }), // Corrigido: inteiro sem decimais
       descricao: faker.commerce.productDescription(),
       quantidade: faker.number.int({ min: 1, max: 100 }),
       ...overrides
