@@ -29,7 +29,7 @@ describe('Testes de API CRUD para Carrinhos no ServeRest', () => {
             if (listaResponse.status === 200 && listaResponse.body.produtos && listaResponse.body.produtos.length > 0) {
                 // Usar produto existente
                 produtoParaCarrinho = listaResponse.body.produtos[0];
-                cy.log('✅ Usando produto existente para carrinho');
+                cy.log('Usando produto existente para carrinho');
             } else {
                 // Se não há produtos, criar um com espera implícita (mesma estratégia que funcionou)
                 cy.wait(1000);
@@ -46,7 +46,7 @@ describe('Testes de API CRUD para Carrinhos no ServeRest', () => {
                 }).then((response) => {
                     expect(response.status).to.eq(201);
                     produtoParaCarrinho = { ...novoProduto, _id: response.body._id };
-                    cy.log('✅ Produto criado com sucesso para carrinho');
+                    cy.log('Produto criado com sucesso para carrinho');
                 });
             }
         });

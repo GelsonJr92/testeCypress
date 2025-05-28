@@ -20,12 +20,12 @@ Cypress.on('uncaught:exception', (err, runnable) => {
 
 // Global before hook
 before(() => {
-  cy.log('🚀 Starting test suite');
+  cy.log('Starting test suite');
 });
 
 // Global after hook
 after(() => {
-  cy.log('✅ Test suite completed');
+  cy.log('Test suite completed');
 });
 
 // Screenshot on failure

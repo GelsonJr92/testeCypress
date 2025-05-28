@@ -39,10 +39,9 @@ Cypress.Commands.add('loginApiServeRest', (email?: string, password?: string) =>
  * @param options - Opções adicionais da requisição
  */
 Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Partial<Cypress.RequestOptions>) => {
-  return cy.window().then((window) => {
-    const token = window.localStorage.getItem('token');
-    console.log('🔍 apiCreate - Token encontrado:', token ? 'SIM' : 'NÃO');
-    console.log('🔍 apiCreate - Token completo:', token);
+  return cy.window().then((window) => {    const token = window.localStorage.getItem('token');
+    console.log('apiCreate - Token encontrado:', token ? 'SIM' : 'NÃO');
+    console.log('apiCreate - Token completo:', token);
     
     const headers: any = {
       'Content-Type': 'application/json'
@@ -50,9 +49,9 @@ Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Parti
     
     if (token) {
       headers['Authorization'] = token;
-      console.log('✅ Token adicionado ao header Authorization');
+      console.log('Token adicionado ao header Authorization');
     } else {
-      console.warn('⚠️ Nenhum token encontrado no localStorage');
+      console.warn('Nenhum token encontrado no localStorage');
     }
 
     const defaultOptions: Partial<Cypress.RequestOptions> = {
@@ -62,7 +61,7 @@ Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Parti
       headers,
       failOnStatusCode: false
     };
-      console.log('🚀 Enviando requisição:', {
+      console.log('Enviando requisição:', {
       method: defaultOptions.method,
       url: defaultOptions.url,
       headers: defaultOptions.headers,

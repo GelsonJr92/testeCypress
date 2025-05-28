@@ -37,7 +37,7 @@ describe('Teste de Espera Simples', () => {
                 failOnStatusCode: true  // FALHAR se não for 201
             }).then((response) => {
                 expect(response.status).to.eq(201);
-                cy.log('✅ SUCESSO: Espera implícita resolveu o problema!');
+                cy.log('SUCESSO: Espera implícita resolveu o problema!');
             });
         });
     });

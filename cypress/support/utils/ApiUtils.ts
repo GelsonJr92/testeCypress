@@ -401,13 +401,12 @@ export class ApiUtils {
           }
 
           cy.request(requestOptions).then((resposta) => {
-            if (ehPublico) {
-              if (chaveEndpoint === 'DELETE /usuarios/{_id}') {
-                // ⚠️ BUG DA API SERVEREST: DELETE com ID inexistente deveria retornar 404/400,
+            if (ehPublico) {              if (chaveEndpoint === 'DELETE /usuarios/{_id}') {
+                // BUG DA API SERVEREST: DELETE com ID inexistente deveria retornar 404/400,
                 // mas está retornando 200 (sucesso) mesmo quando o usuário não existe.
                 expect(resposta.status).to.eq(200);
               } else if (chaveEndpoint === 'PUT /usuarios/{_id}') {
-                // ⚠️ BUG DA API SERVEREST: PUT com ID inexistente deveria retornar 404/400, 
+                // BUG DA API SERVEREST: PUT com ID inexistente deveria retornar 404/400, 
                 // mas está criando um novo usuário e retornando 201. Isso viola o padrão REST.
                 expect(resposta.status).to.eq(201);
               } else if (chaveEndpoint === 'POST /usuarios') {
@@ -421,9 +420,8 @@ export class ApiUtils {
             } else if (ehPrivado) {
               expect(resposta.status).to.not.eq(401);
               
-              if (endpointComId) {
-                if (chaveEndpoint === 'DELETE /produtos/{_id}') {
-                  // ⚠️ BUG DA API SERVEREST: DELETE com ID inexistente deveria retornar 404/400,
+              if (endpointComId) {                if (chaveEndpoint === 'DELETE /produtos/{_id}') {
+                  // BUG DA API SERVEREST: DELETE com ID inexistente deveria retornar 404/400,
                   // mas está retornando 200 (sucesso) mesmo quando o produto não existe.
                   expect(resposta.status).to.eq(200);
                 } else {

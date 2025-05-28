@@ -63,7 +63,7 @@ describe('Testes de API CRUD para Produtos no ServeRest', () => {
                     produtoCriado = { ...novoProduto, _id: response.body._id };
                     Cypress.log({
                         name: 'CreateProduto',
-                        message: `✅ Produto criado com sucesso: ${JSON.stringify(produtoCriado)}`,
+                        message: `Produto criado com sucesso: ${JSON.stringify(produtoCriado)}`,
                     });
                 });
             });
@@ -94,7 +94,7 @@ describe('Testes de API CRUD para Produtos no ServeRest', () => {
             this.skip();
         }
         const dadosAtualizados = DataFactory.gerarProdutoServeRest(); // Gera um novo conjunto de dados para atualização
-          cy.apiUpdate(`/produtos/${produtoCriado._id}`, dadosAtualizados).then((response) => {            // ⚠️ BUG RELACIONADO AO COMPORTAMENTO INTERMITENTE: PUT /produtos/{_id} falha com 400
+          cy.apiUpdate(`/produtos/${produtoCriado._id}`, dadosAtualizados).then((response) => {            // BUG RELACIONADO AO COMPORTAMENTO INTERMITENTE: PUT /produtos/{_id} falha com 400
             // quando o produto foi criado na mesma sessão de testes. Este erro está relacionado
             // ao bug intermitente do POST mencionado acima. Quando o POST funciona, este PUT
             // frequentemente falha, sugerindo problemas de sincronização/cache na API ServeRest.
@@ -151,7 +151,7 @@ describe('Testes de API CRUD para Produtos no ServeRest', () => {
             expect(response.body).to.have.property('message', 'Produto não encontrado');
             Cypress.log({
                 name: 'VerifyDeleteProduto',
-                message: `✅ Verificação pós-exclusão confirmada - produto ID ${produtoCriado._id} não encontrado (Status ${response.status})`,
+                message: `Verificação pós-exclusão confirmada - produto ID ${produtoCriado._id} não encontrado (Status ${response.status})`,
             });
         });
     });
