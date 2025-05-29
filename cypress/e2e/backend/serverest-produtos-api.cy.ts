@@ -3,9 +3,7 @@ import { ApiUtils } from '../../support/utils/ApiUtils'; // Importar ApiUtils
 
 describe('Testes de API CRUD para Produtos no ServeRest', () => {
     let produtoCriado: any;
-    let token: string;
-
-    before(function() {
+    let token: string;    before(function() {
         // Realiza o login uma vez antes de todos os testes do bloco
         cy.loginApiServeRest().then((authToken) => {
             token = authToken;

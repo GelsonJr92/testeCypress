@@ -2,7 +2,9 @@ import { DataFactory } from '../../support/utils/DataFactory';
 import { ApiUtils } from '../../support/utils/ApiUtils'; // Importar ApiUtils
 
 describe('Testes de API CRUD para Usuários no ServeRest', () => {
-    let token: any;before(function() {
+    let token: any;
+
+    before(function() {
         // Realiza o login uma vez antes de todos os testes do bloco
         cy.loginApiServeRest().then((authToken) => {
             token = authToken;
