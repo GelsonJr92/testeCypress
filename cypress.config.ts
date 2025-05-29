@@ -46,6 +46,9 @@ export default defineConfig({
       // Grep plugin for test filtering
       require('@cypress/grep/src/plugin')(config);
       
+      // Plugin para automação de relatórios
+      require('./cypress/plugins/report-automation')(on, config);
+      
       return config;
     },
 

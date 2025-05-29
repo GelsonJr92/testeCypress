@@ -81,7 +81,7 @@ jobs:
       with:
         name: cypress-reports
         path: cypress/reports
-        continue-on-error: true
+      continue-on-error: true
         
     - name: Generate combined report
       run: |
