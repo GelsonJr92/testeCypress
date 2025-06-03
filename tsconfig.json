@@ -14,11 +14,9 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": ".",
-    "paths": {
+    "baseUrl": ".",    "paths": {
       "@/*": ["./cypress/*"],
       "@support/*": ["./cypress/support/*"],
-      "@pages/*": ["./cypress/support/pages/*"],
       "@fixtures/*": ["./cypress/fixtures/*"],
       "@utils/*": ["./cypress/support/utils/*"]
     },

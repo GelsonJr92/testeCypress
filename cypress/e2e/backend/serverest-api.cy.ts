@@ -2,20 +2,21 @@ import { DataFactory } from '../../support/utils/DataFactory';
 import { ApiUtils } from '../../support/utils/ApiUtils'; // Importar ApiUtils
 
 describe('Testes de API CRUD para Usuários no ServeRest', () => {
-    let token: any;
-
-    before(function() {
-        // Realiza o login uma vez antes de todos os testes do bloco
-        cy.loginApiServeRest().then((authToken) => {
-            token = authToken;
-            // Armazenar o token no localStorage usando cy.window
-            cy.window().then((window) => {
-                window.localStorage.setItem('token', token);
+    let token: any;    before(function() {
+        // Realiza o login com credenciais dinâmicas
+        cy.log('Configurando login com credenciais dinâmicas...');
+        cy.loginApiServeRest('admin');
+        
+        // O token já foi armazenado automaticamente no localStorage pelo comando
+        cy.window().then((window) => {
+            const storedToken = window.localStorage.getItem('token');
+            if (storedToken) {
+                token = storedToken;
                 Cypress.log({
                     name: 'LoginAPI',
-                    message: 'Login realizado com sucesso e token armazenado no localStorage.',
+                    message: 'Login realizado com credenciais dinâmicas e token obtido.',
                 });
-            });
+            }
         });
     });
 

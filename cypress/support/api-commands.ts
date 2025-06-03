@@ -2,34 +2,119 @@
 
 // ===============================================
 // COMANDOS GENÉRICOS DE API CRUD PARA TESTES BACKEND
-// ADAPTADOS PARA SERVEREST
+// ADAPTADOS PARA SERVEREST COM CREDENCIAIS DINÂMICAS
 // ===============================================
 
 /**
- * Comando de Login para a API ServeRest
- * @param email - Email do usuário (padrão: fulano@qa.com)
- * @param password - Senha do usuário (padrão: teste)
+ * Comando de Login para a API ServeRest usando credenciais dinâmicas APENAS EM MEMÓRIA
+ * @param type - Tipo de usuário ('admin' ou 'user', padrão: 'admin')
  */
-Cypress.Commands.add('loginApiServeRest', (email?: string, password?: string) => {
-  const userEmail = email || 'fulano@qa.com';
-  const userPassword = password || 'teste';
+Cypress.Commands.add('loginApiServeRest', (type: 'admin' | 'user' = 'admin') => {
+  cy.log(`Iniciando login API ServeRest - tipo: ${type}`);
+  
+  // Primeiro tenta obter credenciais da memória
+  const envKey = type === 'admin' ? 'DYNAMIC_ADMIN_CREDENTIALS' : 'DYNAMIC_USER_CREDENTIALS';
+  let credentialsJson = Cypress.env(envKey);
+  
+  // Se não existir em memória, chamar a task para garantir credenciais
+  if (!credentialsJson) {
+    cy.log(`Inicializando credenciais dinâmicas para ${type}...`);
+    cy.task('ensureDynamicCredentials', null, { timeout: 20000 }).then((sessionCredentials: any) => {
+      if (sessionCredentials?.admin && sessionCredentials?.user) {
+        // Armazenar em memória para próximas chamadas
+        Cypress.env('DYNAMIC_ADMIN_CREDENTIALS', JSON.stringify(sessionCredentials.admin));
+        Cypress.env('DYNAMIC_USER_CREDENTIALS', JSON.stringify(sessionCredentials.user));
+        
+        const credentials = type === 'admin' ? sessionCredentials.admin : sessionCredentials.user;
+        cy.log(`Usando credenciais dinâmicas ${type}: ${credentials.email}`);
 
-  return cy.request({
-    method: 'POST',
-    url: '/login',
-    body: {
-      email: userEmail,
-      password: userPassword
-    },
-    failOnStatusCode: false
-  }).then((response) => {
-    if (response.status === 200) {
-      console.log('Login API bem-sucedido! Token obtido.');
-      return response.body.authorization; // Retorna apenas o token
-    } else {
-      throw new Error(`Login falhou com status ${response.status}: ${JSON.stringify(response.body)}`);
-    }
-  });
+        cy.request({
+          method: 'POST',
+          url: '/login',
+          body: {
+            email: credentials.email,
+            password: credentials.password
+          },
+          failOnStatusCode: false
+        }).then((response) => {
+          if (response.status === 200) {
+            cy.log(`Login API ${type} bem-sucedido com credenciais dinâmicas! Token obtido.`);
+            // Armazenar automaticamente no localStorage
+            cy.window().then((window) => {
+              window.localStorage.setItem('token', response.body.authorization);
+              cy.log(`Token armazenado automaticamente no localStorage`);
+            });
+          } else {
+            throw new Error(`Login ${type} falhou com status ${response.status}: ${JSON.stringify(response.body)}`);
+          }
+        });
+      } else {
+        throw new Error(`Falha ao obter credenciais dinâmicas para ${type}`);
+      }
+    });
+  } else {
+    // Credenciais já estão em memória
+    const credentials = JSON.parse(credentialsJson);
+    cy.log(`Usando credenciais dinâmicas ${type} da memória: ${credentials.email}`);
+
+    cy.request({
+      method: 'POST',
+      url: '/login',
+      body: {
+        email: credentials.email,
+        password: credentials.password
+      },
+      failOnStatusCode: false
+    }).then((response) => {
+      if (response.status === 200) {
+        cy.log(`Login API ${type} bem-sucedido com credenciais da memória! Token obtido.`);
+        // Armazenar automaticamente no localStorage
+        cy.window().then((window) => {
+          window.localStorage.setItem('token', response.body.authorization);
+          cy.log(`Token armazenado automaticamente no localStorage`);
+        });
+      } else {
+        cy.log(`Login ${type} falhou com credenciais da memória. Tentando recriar...`);
+        // Remove credenciais inválidas da memória
+        Cypress.env(envKey, null);
+        
+        // Tenta recriar credenciais
+        cy.task('ensureDynamicCredentials', null, { timeout: 20000 }).then((newSessionCredentials: any) => {
+          if (newSessionCredentials?.admin && newSessionCredentials?.user) {
+            // Armazena novas credenciais na memória
+            Cypress.env('DYNAMIC_ADMIN_CREDENTIALS', JSON.stringify(newSessionCredentials.admin));
+            Cypress.env('DYNAMIC_USER_CREDENTIALS', JSON.stringify(newSessionCredentials.user));
+            
+            const newCredentials = type === 'admin' ? newSessionCredentials.admin : newSessionCredentials.user;
+            
+            // Tenta login novamente
+            cy.request({
+              method: 'POST',
+              url: '/login',
+              body: {
+                email: newCredentials.email,
+                password: newCredentials.password
+              },
+              failOnStatusCode: false
+            }).then((retryResponse) => {
+              if (retryResponse.status === 200) {
+                cy.log(`Login API ${type} bem-sucedido após recriação! Token obtido.`);
+                // Armazenar automaticamente no localStorage
+                cy.window().then((window) => {
+                  window.localStorage.setItem('token', retryResponse.body.authorization);
+                  cy.log(`Token armazenado automaticamente no localStorage após recriação`);
+                });
+              } else {
+                throw new Error(`Login ${type} falhou mesmo após recriação com status ${retryResponse.status}: ${JSON.stringify(retryResponse.body)}`);
+              }
+            });
+          } else {
+            throw new Error(`Falha ao recriar credenciais dinâmicas para ${type}`);
+          }
+        });
+      }
+    });
+  }
 });
 
 /**
@@ -39,9 +124,8 @@ Cypress.Commands.add('loginApiServeRest', (email?: string, password?: string) =>
  * @param options - Opções adicionais da requisição
  */
 Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Partial<Cypress.RequestOptions>) => {
-  return cy.window().then((window) => {    const token = window.localStorage.getItem('token');
-    console.log('apiCreate - Token encontrado:', token ? 'SIM' : 'NÃO');
-    console.log('apiCreate - Token completo:', token);
+  return cy.window().then((window) => {
+    const token = window.localStorage.getItem('token');
     
     const headers: any = {
       'Content-Type': 'application/json'
@@ -49,9 +133,6 @@ Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Parti
     
     if (token) {
       headers['Authorization'] = token;
-      console.log('Token adicionado ao header Authorization');
-    } else {
-      console.warn('Nenhum token encontrado no localStorage');
     }
 
     const defaultOptions: Partial<Cypress.RequestOptions> = {
@@ -61,12 +142,6 @@ Cypress.Commands.add('apiCreate', (endpoint: string, body?: any, options?: Parti
       headers,
       failOnStatusCode: false
     };
-      console.log('Enviando requisição:', {
-      method: defaultOptions.method,
-      url: defaultOptions.url,
-      headers: defaultOptions.headers,
-      body: defaultOptions.body
-    });
     
     return cy.request({ ...defaultOptions, ...options });
   });

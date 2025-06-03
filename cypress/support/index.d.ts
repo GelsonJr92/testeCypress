@@ -1,9 +1,16 @@
 /// <reference types="cypress" />
 
-declare namespace Cypress {
-  interface Chainable {
+// Definições TypeScript para credenciais dinâmicas
+interface DynamicCredentials {
+  nome: string;
+  email: string;
+  password: string;
+  administrador: string;
+}
+
+declare namespace Cypress {  interface Chainable {
     // Comandos API CRUD (adaptados para ServeRest)
-    loginApiServeRest(email?: string, password?: string): Chainable<string>
+    loginApiServeRest(type?: 'admin' | 'user'): Chainable<Element>
     apiCreate(endpoint: string, body?: any, options?: Partial<Cypress.RequestOptions>): Chainable<Cypress.Response<any>>
     apiRead(endpoint: string, options?: Partial<Cypress.RequestOptions>): Chainable<Cypress.Response<any>>
     apiUpdate(endpoint: string, body?: any, options?: Partial<Cypress.RequestOptions>): Chainable<Cypress.Response<any>>

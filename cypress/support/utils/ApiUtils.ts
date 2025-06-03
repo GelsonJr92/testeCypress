@@ -371,10 +371,13 @@ export class ApiUtils {
             expect([200, 400, 401]).to.include(resposta.status);
           }
         });
-      });
-
-      it(`[${method}-AUTH] Deve retornar sucesso ou erro específico com token válido`, () => {
-        cy.loginApiServeRest().then((token) => {
+      });      it(`[${method}-AUTH] Deve retornar sucesso ou erro específico com token válido`, () => {
+        // Fazer login com credenciais dinâmicas
+        cy.loginApiServeRest('admin');
+        
+        // Acessar o token do localStorage após o login
+        cy.window().then((window) => {
+          const token = window.localStorage.getItem('token');
           expect(token).to.exist;
 
           const urlTeste = endpointComId ? 

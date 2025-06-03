@@ -17,6 +17,10 @@ cypress/screenshots/
 cypress/videos/
 cypress/downloads/
 cypress.env.json
+# Credenciais dinâmicas temporárias
+cypress/fixtures/dynamic-credentials.json
+cypress/fixtures/temp-*
+cypress/fixtures/.temp
 
 # IDE
 .vscode/settings.json
@@ -53,6 +57,9 @@ build/
 tmp/
 temp/
 .cache/
+temp_*.json
+temp_spec_metrics.json
+*.tmp
 
 # Database
 *.db

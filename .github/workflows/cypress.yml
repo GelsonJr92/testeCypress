@@ -106,20 +106,19 @@ jobs:
           if (fs.existsSync(reportPath)) {
             const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
             const stats = report.stats;
-            
-            const comment = `## 🧪 Resultados dos Testes API ServeRest
+              const comment = `## Resultados dos Testes API ServeRest
             
             | Métrica | Valor |
             |---------|-------|
-            | ✅ Testes Aprovados | ${stats.passes} |
-            | ❌ Testes Falharam | ${stats.failures} |
-            | ⏭️ Testes Pendentes | ${stats.pending} |
-            | ⏱️ Duração | ${stats.duration}ms |
-            | 📊 Taxa de Sucesso | ${((stats.passes / stats.tests) * 100).toFixed(1)}% |
+            | Testes Aprovados | ${stats.passes} |
+            | Testes Falharam | ${stats.failures} |
+            | Testes Pendentes | ${stats.pending} |
+            | Duração | ${stats.duration}ms |
+            | Taxa de Sucesso | ${((stats.passes / stats.tests) * 100).toFixed(1)}% |
             
-            ${stats.failures > 0 ? '❌ Alguns testes falharam. Verifique o relatório detalhado.' : '✅ Todos os testes passaram!'}
+            ${stats.failures > 0 ? 'Alguns testes falharam. Verifique o relatório detalhado.' : 'Todos os testes passaram!'}
             
-            📋 **Detalhes:**
+            **Detalhes:**
             - Total de Testes: ${stats.tests}
             - Suites Executadas: ${stats.suites}
             `;
