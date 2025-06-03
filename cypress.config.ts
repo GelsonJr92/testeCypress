@@ -64,6 +64,9 @@ export default defineConfig({
       const AdvancedMetrics = require('./cypress/plugins/advanced-metrics');
       AdvancedMetrics.setupAdvancedMetrics(on, config);
       
+      // Plugin para timestamps em relatórios
+      require('./cypress/plugins/timestamp-reports')(on, config);
+      
       // Hook personalizado para SEMPRE gerar relatórios após execução
       on('after:run', (results) => {
         console.log('Execução finalizada. Processando métricas e gerando relatórios...');

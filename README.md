@@ -233,7 +233,88 @@ cypress/reports/
 ├── relatorio-padrao.html        # Relatório Mochawesome
 ├── advanced-report.html         # Relatório avançado interativo  
 └── mochawesome/                 # Arquivos JSON
+    └── .jsons/                  # Arquivos JSON com timestamp
+        ├── mochawesome-debug-03-06-2025-15-12-37.json
+        ├── mochawesome-serverest-produtos-api-03-06-2025-15-13-12.json
+        └── mochawesome-serverest-carrinhos-api-03-06-2025-15-13-18.json
 ```
+
+### **🕒 Sistema de Timestamp Automático**
+
+O framework implementa **nomenclatura automática com timestamp** para todos os arquivos JSON gerados:
+
+**Formato:** `mochawesome-{spec-name}-{dd-mm-aaaa-hh-mm-ss}.json`
+
+**Exemplos:**
+- `mochawesome-debug-03-06-2025-15-12-37.json`
+- `mochawesome-serverest-produtos-api-03-06-2025-15-13-12.json`
+- `mochawesome-serverest-carrinhos-api-03-06-2025-15-13-18.json`
+
+**Características:**
+- ✅ **Timestamp Preciso**: Formato brasileiro (dd-mm-aaaa-hh-mm-ss)
+- ✅ **Nome do Spec**: Inclui o nome do arquivo de teste
+- ✅ **Sem Conflitos**: Cada execução gera arquivo único
+- ✅ **Pipeline Robusto**: Merge funciona com qualquer quantidade de arquivos
+- ✅ **Rastreabilidade**: Fácil identificação de quando cada teste foi executado
+
+**Como Funciona:**
+```typescript
+// Plugin automático em cypress/plugins/timestamp-reports.js
+on('after:spec', (spec, results) => {
+  // Renomeia automaticamente:
+  // mochawesome.json → mochawesome-debug-03-06-2025-15-12-37.json
+});
+```
+
+## 🔧 Correções da Pipeline
+
+### Problema Resolvido: Erro de Merge de Relatórios
+
+**Erro Original:**
+```
+ERROR: Failed to merge reports
+Error: Pattern cypress/reports/mochawesome/.jsons/*.json matched no report files
+```
+
+**Solução Implementada:**
+- ✅ Script robusto `scripts/merge-reports.js` que verifica ambas as pastas (`mochawesome` e `mochawesome/.jsons`)
+- ✅ Criação automática de arquivo JSON vazio quando não há relatórios
+- ✅ Comando `report:generate` que pula geração quando não há dados de teste
+- ✅ Comando `clean:reports` que limpa ambas as pastas de relatórios
+- ✅ Pipeline que nunca falha, mesmo sem testes executados
+
+### Comandos de Relatório Robustos
+
+```bash
+# Merge robusto - nunca falha
+npm run report:merge
+
+# Geração condicional - só gera se há dados
+npm run report:generate
+
+# Criação completa - sempre funciona
+npm run report:create
+
+# Limpeza completa - remove todos os arquivos
+npm run clean:reports
+```
+
+### Estrutura de Diretórios Suportada
+
+```
+cypress/reports/
+├── mochawesome/              # Relatórios individuais (fallback)
+│   ├── spec1.json
+│   └── spec2.json
+├── mochawesome/.jsons/       # Relatórios principais (cypress-mochawesome-reporter)
+│   ├── mochawesome.json
+│   └── mochawesome_*.json
+├── merged.json               # Arquivo consolidado
+├── relatorio-padrao.html     # Relatório HTML padrão
+└── advanced-report.html      # Relatório HTML avançado
+```
+
+---
 
 ## Tecnologias e Dependências
 
