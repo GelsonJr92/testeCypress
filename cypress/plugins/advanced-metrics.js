@@ -34,17 +34,18 @@ class AdvancedMetrics {
     return config;
   }  /**
    * Inicializa coleta de métricas
-   */
-  static initializeMetrics(projectRoot) {
+   */  static initializeMetrics(projectRoot) {
     console.log('Inicializando sistema de métricas avançadas...');
     
-    // PRIMEIRO: Limpar todos os relatórios antigos
+    // PRIMEIRO: Garantir estrutura de diretórios
+    this.ensureDirectoryStructure(projectRoot);
+    
+    // SEGUNDO: Limpar todos os relatórios antigos
     this.cleanOldReports(projectRoot);
     
-    // SEGUNDO: Limpar arquivos temporários residuais
+    // TERCEIRO: Limpar arquivos temporários residuais
     this.cleanTempFiles();
-    
-    const metricsData = {
+      const metricsData = {
       startTime: Date.now(),
       executionId: this.generateExecutionId(),
       system: this.getSystemInfo(),
@@ -55,10 +56,19 @@ class AdvancedMetrics {
       }
     };
 
-    const metricsPath = path.join(projectRoot, 'cypress', 'reports', 'advanced-metrics.json');
-    fs.writeFileSync(metricsPath, JSON.stringify(metricsData, null, 2));
-    
-    console.log('Métricas avançadas inicializadas');
+    // Garantir que o diretório de relatórios existe
+    const reportsDir = path.join(projectRoot, 'cypress', 'reports');
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+
+    const metricsPath = path.join(reportsDir, 'advanced-metrics.json');
+    try {
+      fs.writeFileSync(metricsPath, JSON.stringify(metricsData, null, 2));
+      console.log('Métricas avançadas inicializadas');
+    } catch (error) {
+      console.warn('Aviso: Não foi possível inicializar métricas avançadas:', error.message);
+    }
   }
 
   /**
@@ -410,6 +420,24 @@ ${metrics.specs.map(spec =>
   static cleanOldMochawesomeReports(projectRoot) {
     // Chama a nova função de limpeza completa
     this.cleanOldReports(projectRoot);
+  }
+
+  /**
+   * Garante que a estrutura de diretórios necessária existe
+   */
+  static ensureDirectoryStructure(projectRoot) {
+    const requiredDirs = [
+      path.join(projectRoot, 'cypress', 'reports'),
+      path.join(projectRoot, 'cypress', 'reports', 'mochawesome'),
+      path.join(projectRoot, 'cypress', 'videos'),
+      path.join(projectRoot, 'cypress', 'screenshots')
+    ];
+
+    requiredDirs.forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
   }
 }
 

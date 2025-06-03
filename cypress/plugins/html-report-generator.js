@@ -34,14 +34,18 @@ class AdvancedHtmlReportGenerator {
       const testDetails = this.loadTestDetails(mochawesomePath);
 
       // Carregar dados das respostas das APIs
-      const apiResponses = this.loadApiResponses(projectRoot);
-
-      // Gerar HTML completo
+      const apiResponses = this.loadApiResponses(projectRoot);      // Gerar HTML completo
       const htmlContent = this.generateFullHtml(metricsData, analysisData, testDetails, apiResponses);
 
+      // Garantir que o diretório de relatórios existe
+      const reportsDir = path.join(projectRoot, 'cypress', 'reports');
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+
       // Salvar arquivo
-      const outputPath = path.join(projectRoot, 'cypress', 'reports', 'advanced-report.html');
-      fs.writeFileSync(outputPath, htmlContent, 'utf8');      console.log('Relatório HTML avançado gerado com sucesso!');
+      const outputPath = path.join(reportsDir, 'advanced-report.html');
+      fs.writeFileSync(outputPath, htmlContent, 'utf8');console.log('Relatório HTML avançado gerado com sucesso!');
       console.log('Arquivo:', outputPath);
       
       return outputPath;
