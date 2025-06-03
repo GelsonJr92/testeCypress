@@ -138,106 +138,32 @@ npm run clean:reports        # Limpa relatórios antigos
 
 ## 🎯 TestRunner - Execução Estruturada
 
-O framework inclui uma **classe TestRunner** para execução organizada e categorizada dos testes com configurações flexíveis e relatórios automáticos.
-
-### **🚀 Funcionalidades do TestRunner**
-- ✅ **Execução sequencial** de suites de teste
-- ✅ **Configuração flexível** (browser, ambiente, vídeo, screenshots)
-- ✅ **Geração automática** de relatórios
-- ✅ **Categorização** de testes (api, frontend, integration)
-- ✅ **Sistema de prioridades** e tags
-- ✅ **Validação de ambiente** automática
-- ✅ **Modo debug** para investigação
+O framework inclui uma **classe TestRunner** para execução organizada dos testes. 
 
 ### **📋 Suítes Disponíveis**
-| Nome | Categoria | Prioridade | Descrição | Tags |
-|------|-----------|------------|-----------|------|
-| **Debug Tests** | API | Alta | Validação do ambiente | debug, smoke, api |
-| **ServeRest Core** | API | Alta | Usuários e autenticação | api, core, usuarios, login |
-| **Produtos API** | API | Média | CRUD completo de produtos | api, produtos, crud |
-| **Carrinhos API** | API | Média | Operações de e-commerce | api, carrinhos, crud, ecommerce |
+| Nome | Categoria | Prioridade | Tags |
+|------|-----------|------------|------|
+| **Debug Tests** | API | Alta | debug, smoke, api |
+| **ServeRest Core** | API | Alta | api, core, usuarios, login |
+| **Produtos API** | API | Média | api, produtos, crud |
+| **Carrinhos API** | API | Média | api, carrinhos, crud, ecommerce |
 
-### **🛠️ Comandos TestRunner**
+### **🛠️ Comandos Disponíveis**
 ```bash
-# Informações e exemplos de uso
-npm run test:runner         # Exibe documentação do TestRunner
-npm run test:runner:demo    # Executa demo prático do TestRunner
-
-# Execução completa com relatórios
-npm run test:full          # Todos os testes + relatório automático
-npm run test:api           # Apenas testes de API + relatório
+npm run test:runner         # Documentação e exemplos
+npm run test:runner:demo    # Demo prático
 ```
 
-### **💻 Exemplos de Uso em Código**
-
-#### **Uso Básico**
+### **💻 Uso Básico**
 ```typescript
 import { testRunner } from '../support/TestRunner';
 
-// Executar todos os testes
-testRunner.runAllTests();
-
-// Executar apenas testes de API
-testRunner.runApiTests();
-
-// Executar testes de smoke
-testRunner.runSmokeTests();
-
-// Validar ambiente
-const isValid = testRunner.validateEnvironment();
+testRunner.runAllTests();    // Todos os testes
+testRunner.runApiTests();    // Apenas API
+testRunner.runSmokeTests();  // Apenas smoke tests
 ```
 
-#### **Configuração Personalizada**
-```typescript
-import { TestRunner } from '../support/TestRunner';
-
-const customRunner = new TestRunner({
-  browser: 'firefox',
-  headless: false,
-  recordVideo: true,
-  takeScreenshots: true,
-  environment: 'staging',
-  maxRetries: 3
-});
-
-customRunner.runAllTests();
-```
-
-#### **Comandos Cypress Personalizados**
-```typescript
-// Dentro de arquivos .cy.ts
-describe('Teste com TestRunner', () => {
-  it('Deve validar ambiente', () => {
-    cy.validateTestEnvironment().then((isValid) => {
-      expect(isValid).to.be.true;
-    });
-  });
-  
-  it('Deve executar testes de API', () => {
-    cy.runApiTestSuites();
-  });
-});
-```
-
-#### **Execução de Suite Específica**
-```typescript
-// Listar suites disponíveis
-const suites = testRunner.listAvailableTestSuites();
-
-// Executar suite específica
-const debugSuite = testRunner.getTestSuiteByName('Debug Tests');
-if (debugSuite) {
-  testRunner.runTestSuite(debugSuite);
-}
-
-// Modo debug para investigação
-testRunner.debugMode();
-```
-
-### **📁 Arquivos de Referência**
-- **Documentação principal**: `cypress/support/TestRunner.ts`
-- **Exemplos práticos**: `cypress/support/examples/TestRunner-examples.ts`
-- **Integração**: `cypress/support/e2e.ts`
+> � **Documentação completa**: `cypress/support/TestRunner.ts`
 
 ## 📊 Comandos Personalizados Disponíveis
 
