@@ -71,8 +71,7 @@ class AdvancedHtmlReportGenerator {
   }
   /**
    * Carrega detalhes de todos os testes individuais
-   */
-  static loadTestDetails(mochawesomePath) {
+   */  static loadTestDetails(mochawesomePath) {
     const testDetails = {
       specs: [],
       tests: [],
@@ -87,20 +86,32 @@ class AdvancedHtmlReportGenerator {
     };
 
     try {
-      if (!fs.existsSync(mochawesomePath)) {
-        console.log(' Pasta mochawesome não encontrada:', mochawesomePath);
+      // Primeiro, tentar na pasta .jsons (onde ficam os arquivos com timestamp)
+      const jsonsPath = path.join(mochawesomePath, '.jsons');
+      let jsonFiles = [];
+      let searchPath = '';
+
+      if (fs.existsSync(jsonsPath)) {
+        jsonFiles = fs.readdirSync(jsonsPath)
+          .filter(file => file.endsWith('.json'))
+          .sort();
+        searchPath = jsonsPath;
+        console.log(` Usando pasta .jsons: ${jsonsPath}`);
+      } else if (fs.existsSync(mochawesomePath)) {
+        // Fallback para a pasta mochawesome
+        jsonFiles = fs.readdirSync(mochawesomePath)
+          .filter(file => file.endsWith('.json'))
+          .sort();
+        searchPath = mochawesomePath;
+        console.log(` Usando pasta mochawesome: ${mochawesomePath}`);
+      } else {
+        console.log(' Nenhuma pasta de relatórios encontrada');
         return testDetails;
       }
 
-      const jsonFiles = fs.readdirSync(mochawesomePath)
-        .filter(file => file.endsWith('.json'))
-        .sort();
-
-      console.log(` Processando ${jsonFiles.length} arquivos JSON...`);
-
-      jsonFiles.forEach(file => {
+      console.log(` Processando ${jsonFiles.length} arquivos JSON...`);      jsonFiles.forEach(file => {
         try {
-          const filePath = path.join(mochawesomePath, file);
+          const filePath = path.join(searchPath, file);
           const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
             console.log(`    Processando: ${file}`);
           

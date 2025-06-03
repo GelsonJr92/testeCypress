@@ -87,7 +87,6 @@ class AdvancedMetrics {
     const tempPath = path.join(process.cwd(), 'temp_spec_metrics.json');
     fs.writeFileSync(tempPath, JSON.stringify(specData, null, 2));
   }
-
   /**
    * Finaliza métricas para um spec
    */
@@ -140,7 +139,6 @@ class AdvancedMetrics {
       console.error('Erro ao processar métricas do spec:', error.message);
     }
   }
-
   /**
    * Finaliza coleta de métricas
    */
@@ -148,23 +146,33 @@ class AdvancedMetrics {
     try {
       const metricsPath = path.join(projectRoot, 'cypress', 'reports', 'advanced-metrics.json');
       
-      if (!fs.existsSync(metricsPath)) return;
+      if (!fs.existsSync(metricsPath)) {
+        console.log('Arquivo de métricas não encontrado, criando novo...');
+        this.initializeMetrics(projectRoot);
+      }
       
       const metrics = JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
+      
+      // IMPORTANTE: Se não temos specs coletados durante a execução,
+      // vamos extrair dos arquivos JSON gerados
+      if (metrics.specs.length === 0) {
+        console.log('Recriando dados dos specs a partir dos arquivos JSON...');
+        metrics.specs = this.extractSpecsFromJsonFiles(projectRoot);
+      }
       
       // Finalizar dados gerais
       metrics.endTime = Date.now();
       metrics.totalDuration = metrics.endTime - metrics.startTime;
       metrics.summary = {
         totalSpecs: metrics.specs.length,
-        totalTests: results.totalTests,
-        totalPassed: results.totalPassed,
-        totalFailed: results.totalFailed,
-        totalPending: results.totalPending,
-        totalSkipped: results.totalSkipped,
-        totalDuration: results.totalDuration,
+        totalTests: results ? results.totalTests : this.calculateTotalTests(metrics.specs),
+        totalPassed: results ? results.totalPassed : this.calculateTotalPassed(metrics.specs),
+        totalFailed: results ? results.totalFailed : this.calculateTotalFailed(metrics.specs),
+        totalPending: results ? results.totalPending : this.calculateTotalPending(metrics.specs),
+        totalSkipped: results ? results.totalSkipped : this.calculateTotalSkipped(metrics.specs),
+        totalDuration: results ? results.totalDuration : this.calculateTotalDuration(metrics.specs),
         averageSpecDuration: metrics.specs.length > 0 ? 
-          metrics.specs.reduce((sum, spec) => sum + spec.duration, 0) / metrics.specs.length : 0
+          metrics.specs.reduce((sum, spec) => sum + (spec.duration || 0), 0) / metrics.specs.length : 0
       };
 
       // Análise de performance
@@ -172,7 +180,7 @@ class AdvancedMetrics {
       
       fs.writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
       
-      console.log('Métricas avançadas finalizadas');
+      console.log(`Métricas avançadas finalizadas: ${metrics.specs.length} specs processados`);
       
     } catch (error) {
       console.error('Erro ao finalizar métricas:', error.message);
@@ -225,20 +233,18 @@ class AdvancedMetrics {
       } else if (percentageChange < -20) {
         analysis.memoryTrend = 'decreasing';
       }
-    }
-
-    // Analisar specs mais lentos e rápidos
-    const sortedSpecs = metrics.specs.sort((a, b) => b.duration - a.duration);
+    }    // Analisar specs mais lentos e rápidos
+    const sortedSpecs = metrics.specs.sort((a, b) => (b.duration || 0) - (a.duration || 0));
     analysis.slowestSpecs = sortedSpecs.slice(0, 3).map(spec => ({
       name: path.basename(spec.spec),
-      duration: spec.duration,
-      memoryUsed: spec.memoryDelta.heapUsed
+      duration: spec.duration || 0,
+      memoryUsed: (spec.memoryDelta && spec.memoryDelta.heapUsed) || 0
     }));
     
     analysis.fastestSpecs = sortedSpecs.slice(-3).reverse().map(spec => ({
       name: path.basename(spec.spec),
-      duration: spec.duration,
-      memoryUsed: spec.memoryDelta.heapUsed
+      duration: spec.duration || 0,
+      memoryUsed: (spec.memoryDelta && spec.memoryDelta.heapUsed) || 0
     }));
 
     return analysis;
@@ -438,6 +444,106 @@ ${metrics.specs.map(spec =>
         fs.mkdirSync(dir, { recursive: true });
       }
     });
+  }
+
+  /**
+   * Extrai dados dos specs a partir dos arquivos JSON na pasta .jsons
+   */
+  static extractSpecsFromJsonFiles(projectRoot) {
+    const specs = [];
+    
+    try {
+      const jsonsPath = path.join(projectRoot, 'cypress', 'reports', 'mochawesome', '.jsons');
+      
+      if (!fs.existsSync(jsonsPath)) {
+        console.log('Pasta .jsons não encontrada');
+        return specs;
+      }
+      
+      const jsonFiles = fs.readdirSync(jsonsPath)
+        .filter(file => file.endsWith('.json'))
+        .sort();
+      
+      console.log(`Processando ${jsonFiles.length} arquivos JSON para métricas...`);
+      
+      jsonFiles.forEach(file => {
+        try {
+          const filePath = path.join(jsonsPath, file);
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          
+          if (data.stats && data.results) {
+            const specData = {
+              spec: file,
+              absolute: data.results[0]?.file || file,
+              relative: data.results[0]?.file || file,
+              startTime: new Date(data.stats.start).getTime(),
+              endTime: new Date(data.stats.end).getTime(),
+              duration: data.stats.duration,
+              results: {
+                tests: data.stats.tests,
+                passes: data.stats.passes,
+                failures: data.stats.failures,
+                pending: data.stats.pending,
+                skipped: data.stats.skipped || 0,
+                duration: data.stats.duration
+              }
+            };
+            
+            specs.push(specData);
+            console.log(`  Spec extraído: ${file} (${data.stats.tests} testes)`);
+          }
+        } catch (err) {
+          console.warn(`Erro ao processar ${file}:`, err.message);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao extrair specs dos arquivos JSON:', error.message);
+    }
+    
+    return specs;
+  }
+
+  /**
+   * Calcula total de testes baseado nos specs
+   */
+  static calculateTotalTests(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.tests || 0), 0);
+  }
+
+  /**
+   * Calcula total de testes passados baseado nos specs
+   */
+  static calculateTotalPassed(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.passes || 0), 0);
+  }
+
+  /**
+   * Calcula total de testes falhados baseado nos specs
+   */
+  static calculateTotalFailed(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.failures || 0), 0);
+  }
+
+  /**
+   * Calcula total de testes pendentes baseado nos specs
+   */
+  static calculateTotalPending(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.pending || 0), 0);
+  }
+
+  /**
+   * Calcula total de testes pulados baseado nos specs
+   */
+  static calculateTotalSkipped(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.skipped || 0), 0);
+  }
+
+  /**
+   * Calcula duração total baseado nos specs
+   */
+  static calculateTotalDuration(specs) {
+    return specs.reduce((total, spec) => total + (spec.results?.duration || 0), 0);
   }
 }
 

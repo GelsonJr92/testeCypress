@@ -342,3 +342,34 @@ Para problemas e dúvidas:
 1. ✅ Verifique a seção de comandos principais
 2. 📖 Consulte a [documentação do Cypress](https://docs.cypress.io/)
 3. 🔍 Examine os exemplos de teste existentes
+
+### **🔧 Resolução de Problemas**
+
+#### **Problema: "0 Specs Analisados" no Relatório Avançado**
+
+Se o relatório avançado mostrar "0 Specs Analisados" mesmo após executar testes:
+
+**1. Executar correção automática:**
+```bash
+npm run report:advanced
+```
+
+**2. Verificar se os arquivos JSON existem:**
+```bash
+# Verificar se há arquivos JSON na pasta .jsons
+ls cypress/reports/mochawesome/.jsons/
+```
+
+**3. Regenerar métricas manualmente:**
+```bash
+node -e "const AdvancedMetrics = require('./cypress/plugins/advanced-metrics'); AdvancedMetrics.finalizeMetrics(null, process.cwd())"
+```
+
+**4. Gerar relatório atualizado:**
+```bash
+node -e "const generator = require('./cypress/plugins/html-report-generator.js'); generator.generateAdvancedReport(process.cwd())"
+```
+
+**Causa:** O sistema de métricas avançadas depende dos arquivos JSON gerados pelos testes. Se não há dados coletados durante a execução, o sistema extrai automaticamente os dados dos arquivos JSON para recriar as métricas.
+
+**Solução Permanente:** O script `npm run report:advanced` foi atualizado para sempre verificar e corrigir automaticamente os dados das métricas antes de gerar o relatório HTML.
