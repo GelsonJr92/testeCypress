@@ -24,96 +24,65 @@ Cypress.Commands.add('loginApiServeRest', (type: 'admin' | 'user' = 'admin') => 
         // Armazenar em memória para próximas chamadas
         Cypress.env('DYNAMIC_ADMIN_CREDENTIALS', JSON.stringify(sessionCredentials.admin));
         Cypress.env('DYNAMIC_USER_CREDENTIALS', JSON.stringify(sessionCredentials.user));
-        
-        const credentials = type === 'admin' ? sessionCredentials.admin : sessionCredentials.user;
-        cy.log(`Usando credenciais dinâmicas ${type}: ${credentials.email}`);
+          const credentials = type === 'admin' ? sessionCredentials.admin : sessionCredentials.user;
+        cy.log(`Usando credenciais dinâmicas ${type}: ${credentials.email} com token salvo`);
 
-        cy.request({
-          method: 'POST',
-          url: '/login',
-          body: {
-            email: credentials.email,
-            password: credentials.password
-          },
-          failOnStatusCode: false
-        }).then((response) => {
-          if (response.status === 200) {
-            cy.log(`Login API ${type} bem-sucedido com credenciais dinâmicas! Token obtido.`);
-            // Armazenar automaticamente no localStorage
-            cy.window().then((window) => {
-              window.localStorage.setItem('token', response.body.authorization);
-              cy.log(`Token armazenado automaticamente no localStorage`);
-            });
-          } else {
-            throw new Error(`Login ${type} falhou com status ${response.status}: ${JSON.stringify(response.body)}`);
-          }
-        });
+        // Usar o token já salvo ao invés de fazer login novamente
+        if (credentials.token) {
+          cy.log(`Token encontrado, usando diretamente para ${type}`);
+          // Armazenar automaticamente no localStorage
+          cy.window().then((window) => {
+            window.localStorage.setItem('token', credentials.token);
+            cy.log(`Token ${type} armazenado automaticamente no localStorage`);
+          });
+        } else {
+          throw new Error(`Token não encontrado nas credenciais ${type}`);
+        }
       } else {
         throw new Error(`Falha ao obter credenciais dinâmicas para ${type}`);
       }
-    });
-  } else {
+    });  } else {
     // Credenciais já estão em memória
     const credentials = JSON.parse(credentialsJson);
-    cy.log(`Usando credenciais dinâmicas ${type} da memória: ${credentials.email}`);
+    cy.log(`Usando credenciais dinâmicas ${type} da memória: ${credentials.email} com token salvo`);
 
-    cy.request({
-      method: 'POST',
-      url: '/login',
-      body: {
-        email: credentials.email,
-        password: credentials.password
-      },
-      failOnStatusCode: false
-    }).then((response) => {
-      if (response.status === 200) {
-        cy.log(`Login API ${type} bem-sucedido com credenciais da memória! Token obtido.`);
-        // Armazenar automaticamente no localStorage
-        cy.window().then((window) => {
-          window.localStorage.setItem('token', response.body.authorization);
-          cy.log(`Token armazenado automaticamente no localStorage`);
-        });
-      } else {
-        cy.log(`Login ${type} falhou com credenciais da memória. Tentando recriar...`);
-        // Remove credenciais inválidas da memória
-        Cypress.env(envKey, null);
-        
-        // Tenta recriar credenciais
-        cy.task('ensureDynamicCredentials', null, { timeout: 20000 }).then((newSessionCredentials: any) => {
-          if (newSessionCredentials?.admin && newSessionCredentials?.user) {
-            // Armazena novas credenciais na memória
-            Cypress.env('DYNAMIC_ADMIN_CREDENTIALS', JSON.stringify(newSessionCredentials.admin));
-            Cypress.env('DYNAMIC_USER_CREDENTIALS', JSON.stringify(newSessionCredentials.user));
-            
-            const newCredentials = type === 'admin' ? newSessionCredentials.admin : newSessionCredentials.user;
-            
-            // Tenta login novamente
-            cy.request({
-              method: 'POST',
-              url: '/login',
-              body: {
-                email: newCredentials.email,
-                password: newCredentials.password
-              },
-              failOnStatusCode: false
-            }).then((retryResponse) => {
-              if (retryResponse.status === 200) {
-                cy.log(`Login API ${type} bem-sucedido após recriação! Token obtido.`);
-                // Armazenar automaticamente no localStorage
-                cy.window().then((window) => {
-                  window.localStorage.setItem('token', retryResponse.body.authorization);
-                  cy.log(`Token armazenado automaticamente no localStorage após recriação`);
-                });
-              } else {
-                throw new Error(`Login ${type} falhou mesmo após recriação com status ${retryResponse.status}: ${JSON.stringify(retryResponse.body)}`);
-              }
+    // Usar o token salvo diretamente
+    if (credentials.token) {
+      cy.log(`Token encontrado na memória, usando diretamente para ${type}`);
+      // Armazenar automaticamente no localStorage
+      cy.window().then((window) => {
+        window.localStorage.setItem('token', credentials.token);
+        cy.log(`Token ${type} armazenado automaticamente no localStorage`);
+      });
+    } else {
+      cy.log(`Token não encontrado na memória para ${type}. Tentando recriar credenciais...`);
+      // Remove credenciais inválidas da memória
+      Cypress.env(envKey, null);
+      
+      // Tenta recriar credenciais
+      cy.task('ensureDynamicCredentials', null, { timeout: 20000 }).then((newSessionCredentials: any) => {
+        if (newSessionCredentials?.admin && newSessionCredentials?.user) {
+          // Armazena novas credenciais na memória
+          Cypress.env('DYNAMIC_ADMIN_CREDENTIALS', JSON.stringify(newSessionCredentials.admin));
+          Cypress.env('DYNAMIC_USER_CREDENTIALS', JSON.stringify(newSessionCredentials.user));
+          
+          const newCredentials = type === 'admin' ? newSessionCredentials.admin : newSessionCredentials.user;
+          
+          // Usar o token das novas credenciais
+          if (newCredentials.token) {
+            cy.log(`Token das novas credenciais encontrado para ${type}`);
+            cy.window().then((window) => {
+              window.localStorage.setItem('token', newCredentials.token);
+              cy.log(`Token armazenado automaticamente no localStorage após recriação`);
             });
           } else {
-            throw new Error(`Falha ao recriar credenciais dinâmicas para ${type}`);
+            throw new Error(`Token não encontrado nas novas credenciais para ${type}`);
           }
-        });
-      }
-    });
+        } else {
+          throw new Error(`Falha ao recriar credenciais dinâmicas para ${type}`);
+        }
+      });
+    }
   }
 });
 

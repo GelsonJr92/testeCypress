@@ -29,7 +29,9 @@ export const ensureDynamicCredentials = (args: any) => {
       }
     } catch (error) {
       console.log('Erro ao ler credenciais da sessão, criando novas...');
-      fs.unlinkSync(credentialsFile);
+      if (fs.existsSync(credentialsFile)) {
+        fs.unlinkSync(credentialsFile);
+      }
     }
   }
   
@@ -47,65 +49,91 @@ export const ensureDynamicCredentials = (args: any) => {
     password: `AdminDin${randomId}${timestamp.toString().slice(-4)}!`,
     administrador: 'true'
   };
-  
+
   return axios.post('https://serverest.dev/usuarios', adminData)
     .then((adminResponse: any) => {
       console.log(`Admin criado com sucesso: ${adminData.email}`);
-      const adminCredentials = {
-        id: adminResponse.data._id,
+      
+      // Fazer login para obter token (ao invés de armazenar senha)
+      return axios.post('https://serverest.dev/login', {
         email: adminData.email,
-        password: adminData.password,
-        nome: adminData.nome,
-        isAdmin: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Criar credenciais user com dados únicos
-      const userTimestamp = Date.now() + 500;
-      const userRandomId = Math.random().toString(36).substr(2, 8);
-      const userSessionId = `${userTimestamp}_${userRandomId}`;
-      
-      const userData = {
-        nome: `User_Dinamico_${userSessionId}`,
-        email: `user.dinamico.${userSessionId}@exemplo.com`,
-        password: `UserDin${userRandomId}${userTimestamp.toString().slice(-4)}!`,
-        administrador: 'false'
-      };
-      
-      return axios.post('https://serverest.dev/usuarios', userData)
-        .then((userResponse: any) => {
-          const userCredentials = {
-            id: userResponse.data._id,
-            email: userData.email,
-            password: userData.password,
-            nome: userData.nome,
-            isAdmin: false,
-            createdAt: new Date().toISOString()
-          };
-          
-          const sessionCredentials = {
-            admin: adminCredentials,
-            user: userCredentials,
-            sessionId: Date.now()
-          };
-          
-          try {
-            fs.writeFileSync(credentialsFile, JSON.stringify(sessionCredentials, null, 2));
-            console.log(`Credenciais da sessão criadas - Admin: ${adminCredentials.email}, User: ${userCredentials.email}`);
-            return sessionCredentials;          } catch (error: any) {
-            console.log('Erro ao salvar credenciais da sessão:', error.message);
-            return sessionCredentials;
-          }
-        })
-        .catch((error: any) => {
-          console.error('Erro detalhado ao criar usuário regular:');
-          console.error('   - Dados enviados:', JSON.stringify(userData, null, 2));
-          console.error('   - Status:', error.response?.status);
-          console.error('   - Resposta da API:', JSON.stringify(error.response?.data, null, 2));
-          throw error;
-        });
-    })
-    .catch((error: any) => {
+        password: adminData.password
+      }).then((adminLoginResponse: any) => {
+        const adminCredentials = {
+          id: adminResponse.data._id,
+          email: adminData.email,
+          token: adminLoginResponse.data.authorization, // Token ao invés de senha
+          nome: adminData.nome,
+          isAdmin: true,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Criar credenciais user com dados únicos
+        const userTimestamp = Date.now() + 500;
+        const userRandomId = Math.random().toString(36).substr(2, 8);
+        const userSessionId = `${userTimestamp}_${userRandomId}`;
+        
+        const userData = {
+          nome: `User_Dinamico_${userSessionId}`,
+          email: `user.dinamico.${userSessionId}@exemplo.com`,
+          password: `UserDin${userRandomId}${userTimestamp.toString().slice(-4)}!`,
+          administrador: 'false'
+        };
+        
+        return axios.post('https://serverest.dev/usuarios', userData)
+          .then((userResponse: any) => {
+            console.log(`User criado com sucesso: ${userData.email}`);
+            
+            // Fazer login para obter token (ao invés de armazenar senha)
+            return axios.post('https://serverest.dev/login', {
+              email: userData.email,
+              password: userData.password
+            }).then((userLoginResponse: any) => {
+              const userCredentials = {
+                id: userResponse.data._id,
+                email: userData.email,
+                token: userLoginResponse.data.authorization, // Token ao invés de senha
+                nome: userData.nome,
+                isAdmin: false,
+                createdAt: new Date().toISOString()
+              };
+              
+              const sessionCredentials = {
+                admin: adminCredentials,
+                user: userCredentials,
+                sessionId: Date.now()
+              };
+              
+              try {
+                fs.writeFileSync(credentialsFile, JSON.stringify(sessionCredentials, null, 2));
+                console.log(`Credenciais da sessão criadas com tokens - Admin: ${adminCredentials.email}, User: ${userCredentials.email}`);
+                return sessionCredentials;
+              } catch (error: any) {
+                console.log('Erro ao salvar credenciais da sessão:', error.message);
+                return sessionCredentials;
+              }
+            }).catch((error: any) => {
+              console.error('Erro detalhado ao fazer login do usuário regular:');
+              console.error('   - Email:', userData.email);
+              console.error('   - Status:', error.response?.status);
+              console.error('   - Resposta da API:', JSON.stringify(error.response?.data, null, 2));
+              throw error;
+            });
+          }).catch((error: any) => {
+            console.error('Erro detalhado ao criar usuário regular:');
+            console.error('   - Dados enviados:', JSON.stringify(userData, null, 2));
+            console.error('   - Status:', error.response?.status);
+            console.error('   - Resposta da API:', JSON.stringify(error.response?.data, null, 2));
+            throw error;
+          });
+      }).catch((error: any) => {
+        console.error('Erro detalhado ao fazer login do admin:');
+        console.error('   - Email:', adminData.email);
+        console.error('   - Status:', error.response?.status);
+        console.error('   - Resposta da API:', JSON.stringify(error.response?.data, null, 2));
+        throw error;
+      });
+    }).catch((error: any) => {
       console.error('Erro detalhado ao criar usuário admin:');
       console.error('   - Dados enviados:', JSON.stringify(adminData, null, 2));
       console.error('   - Status:', error.response?.status);
@@ -117,12 +145,12 @@ export const ensureDynamicCredentials = (args: any) => {
 export const readFileIfExists = (filePath: string) => {
   const fullPath = path.resolve(filePath);
   
-  try {
-    if (fs.existsSync(fullPath)) {
+  try {    if (fs.existsSync(fullPath)) {
       const content = fs.readFileSync(fullPath, 'utf8');
       return JSON.parse(content);
     }
-    return null;  } catch (error: any) {
+    return null;
+  } catch (error: any) {
     console.log(`Erro ao ler arquivo ${filePath}:`, error.message);
     return null;
   }
@@ -131,13 +159,13 @@ export const readFileIfExists = (filePath: string) => {
 export const deleteFile = (filePath: string) => {
   const fullPath = path.resolve(filePath);
   
-  try {
-    if (fs.existsSync(fullPath)) {
+  try {    if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
       console.log(`Arquivo removido: ${filePath}`);
       return true;
     }
-    return false;  } catch (error: any) {
+    return false;
+  } catch (error: any) {
     console.log(`Erro ao remover arquivo ${filePath}:`, error.message);
     return false;
   }
